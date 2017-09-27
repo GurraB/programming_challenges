@@ -1,5 +1,14 @@
 import operator
 
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print ('%s function took %0.3f ms' % (f.__name__, (time2-time1)*1000.0))
+        return ret
+    return wrap
+
 class Edge:
     weight = 9999
     v1 = None
@@ -22,10 +31,10 @@ class Edge:
 class Vertex:
     name = ""
     edges = list()
-    visited = False
 
     def __init__(self, name):
         self.name = name
+        self.edges = list()
 
     def addEdge(self, edge):
         self.edges.append(edge)
@@ -72,6 +81,9 @@ class Node:
 class UnionFind:
     nodeMap = {}
 
+    def __init__(self):
+        self.nodeMap = {}
+
 def makeSet(data, rank, uf):
     node = Node(data, rank)
     node.parent = node
@@ -104,6 +116,7 @@ def findset(node):
 
 
 import sys
+import time
 from collections import deque
 mazeinput = sys.stdin.read().split('\n')
 currentline = 0
@@ -121,13 +134,13 @@ def formatVertex(name1, weight, name2):
     else:
         return (name2, weight, name1)
 
-def findS():
+def findS(maze):
     for y in range(len(maze)):
         for x in range(len(maze[y])):
             if maze[y][x] == 'S':
                 return (y, x)
 
-def findA():
+def findA(maze):
     aliens = list()
     for y in range(len(maze)):
         for x in range(len(maze[y])):
@@ -136,7 +149,7 @@ def findA():
     return aliens
 
 def inbounds(pos, lenX, lenY):
-    return True if pos[0] > 0 and pos[0] < lenX and pos[1] > 0 and pos[1] < lenY else False
+    return True if pos[0] > 0 and pos[0] < lenY and pos[1] > 0 and pos[1] < lenX else False
 
 def createVerticesFromNode(maze, xlen, ylen, node):
     mazeweights = list()
@@ -171,15 +184,12 @@ def createVerticesFromNode(maze, xlen, ylen, node):
 
     vertices = list()
     nodes = list()
-    nodes.append(findS())
-    nodes.extend(findA())
+    nodes.append(findS(maze))
+    nodes.extend(findA(maze))
     for n in nodes:
         if not mazeweights[n[0]][n[1]] == 0:
             vertices.append((n, mazeweights[n[0]][n[1]]))
 
-    for r in mazeweights:
-        print(r)
-    print("\n")
     return vertices
 
 def createMST(g):
@@ -195,6 +205,24 @@ def createMST(g):
             mst.append(e)
     return mst
 
+@timing
+def createGraph(maze):
+    s = findS(maze)
+    g = Graph()
+    g.addVertex('S')
+    allVertices = list()
+    for v in createVerticesFromNode(maze, xlen, ylen, s):
+        allVertices.append(formatVertex(maze[s[0]][s[1]], v[1], maze[v[0][0]][v[0][1]]))
+    for alien in findA(maze):
+        g.addVertex(maze[alien[0]][alien[1]])
+        for v in createVerticesFromNode(maze, xlen, ylen, alien):
+            allVertices.append(formatVertex(maze[alien[0]][alien[1]], v[1], maze[v[0][0]][v[0][1]]))
+    allVertices = list(set(allVertices))
+    sorted_vertices = sorted(allVertices, key=lambda tup: tup[1])
+    for v in sorted_vertices:
+        g.addEdge((v[0], v[2], v[1]))
+    return g
+
 for i in range(testcases):
     maze = list()
     [xlen, ylen] = mazeinput[currentline].split(' ')
@@ -209,32 +237,13 @@ for i in range(testcases):
                 row[k] = 'A' + str(counter)
                 counter += 1
         maze.append(row)
-        print(row)
         currentline += 1
-    print("\n")
-    s = findS()
-    g = Graph()
-    g.addVertex('S')
-    allVertices = list()
-
-    for v in createVerticesFromNode(maze, xlen, ylen, s):
-        allVertices.append(formatVertex(maze[s[0]][s[1]], v[1], maze[v[0][0]][v[0][1]]))
-
-    for alien in findA():
-        g.addVertex(maze[alien[0]][alien[1]])
-        for v in createVerticesFromNode(maze, xlen, ylen, alien):
-            allVertices.append(formatVertex(maze[alien[0]][alien[1]], v[1], maze[v[0][0]][v[0][1]]))
-
-    allVertices = list(set(allVertices))
-    sorted_vertices = sorted(allVertices, key=lambda tup: tup[1])
-    for v in sorted_vertices:
-        g.addEdge((v[0], v[2], v[1]))
-
-    #for e in g.getEdges():
-    #    print(e.getPrettyText())
+    if findS(maze) == None:
+        print("0")
+        continue
+    g = createGraph(maze)
     mst = createMST(g)
     weightsum = 0
     for e in mst:
-        #print(e.getPrettyText())
         weightsum += e.weight
     print(weightsum)
