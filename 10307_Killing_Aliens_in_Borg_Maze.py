@@ -119,7 +119,6 @@ def findset(node):
 import sys
 import time
 from collections import deque
-import _thread as thread
 mazeinput = sys.stdin.read().split('\n')
 currentline = 0
 testcases = int(mazeinput[currentline])
@@ -160,10 +159,8 @@ def createVerticesFromNode(maze, xlen, ylen, node):
         rowweights = [9999] * xlen
         mazeweights.append(rowweights)
     mazeweights[node[0]][node[1]] = 0
-    operations = 0
     q.append(node)
     while len(q) > 0:
-        operations += 1
         u = q.pop()
         #EAST
         if inbounds((u[0] + 1, u[1]), xlen, ylen):
@@ -185,7 +182,6 @@ def createVerticesFromNode(maze, xlen, ylen, node):
             if mazeweights[u[0]][u[1]] + 1 < mazeweights[u[0]][u[1] + 1] and not maze[u[0]][u[1] + 1] == '#':
                 mazeweights[u[0]][u[1] + 1] = mazeweights[u[0]][u[1]] + 1
                 q.append((u[0], u[1] + 1))
-    print(operations)
     vertices = list()
     nodes = list()
     nodes.append(findS(maze))
@@ -196,7 +192,6 @@ def createVerticesFromNode(maze, xlen, ylen, node):
 
     return vertices
 
-@timing
 def createMST(g):
     uf = UnionFind()
     edges = g.getEdges()
@@ -221,9 +216,7 @@ def createGraph(maze):
     for alien in findA(maze):
         g.addVertex(maze[alien[0]][alien[1]])
         for v in createVerticesFromNode(maze, xlen, ylen, alien):
-            #thread.start_new_thread(createVerticesFromNode(maze, xlen, ylen, alien))
             allVertices.append(formatVertex(maze[alien[0]][alien[1]], v[1], maze[v[0][0]][v[0][1]]))
-    #thread.join()
     allVertices = list(set(allVertices))
     sorted_vertices = sorted(allVertices, key=lambda tup: tup[1])
     for v in sorted_vertices:
