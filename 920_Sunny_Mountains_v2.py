@@ -22,7 +22,7 @@ class Line:
         return (self.k * x + self.m)
 
 def generateLineFromPoints(p1, p2):
-    k = -(p2[1] - p1[1]) / (p2[0] - p1[0])
+    k = (p2[1] - p1[1]) / (p2[0] - p1[0])
     m = p1[1] - (k * p1[0])
     return Line(k, m)
 
@@ -52,14 +52,8 @@ for i in range(testcases):
         if p2[1] <= coveredY:
             continue
         line = generateLineFromPoints(p1, p2)
-        if line.k > 0:
-            newp1 = (line.getX(coveredY), coveredY)
-            sunny += getLenBetweenPoints(newp1, p2)
-            coveredY = p2[1]
-        else:
-            print()
+        newp1 = (line.getX(coveredY), coveredY)
+        sunny += getLenBetweenPoints(newp1, p2)
+        coveredY = p2[1]
 
-    if i == testcases - 1:
-        print("%.2f" % sunny, end='\n')
-    else:
-        print("%.2f" % sunny)
+    print("%.2f" % sunny, end='\n')
